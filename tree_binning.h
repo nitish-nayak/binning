@@ -14,6 +14,43 @@
 #include <functional>
 #include <type_traits>
 
+// this will read nicer
+template<size_t D>
+using dim_t = std::integral_constant<size_t, D>;
+
+template<size_t D>
+struct bin_t {
+  std::array<double, D> xmin, xmax;
+  double content;
+  // operator for sorting vector of bins according to their edges
+  // sort them according to their left edges first
+  // for multidimensional axes, it uses the relational operator for std::array
+  // which is the comparison between the first different element (lexicographically)
+  bool operator<(bin_t const& o_bin) const {
+    if (xmin == o_bin.xmin) return (xmax < o_bin.xmax);
+    return (xmin < o_bin.xmin);
+  }
+};
+
+template<size_t D>
+struct histogram_t {
+  std::array<double, D> xmin, xmax;
+  int nbins;
+  std::vector<bin_t<D>> sorted_bins;
+
+  histogram_t(const std::vector<bin_t<D>>& bins, bool sorted=false)
+  {
+    nbins = bins.size();
+    if(!nbins) return;
+    // store a copy
+    sorted_bins = bins;
+    if(!sorted)
+      std::sort(sorted_bins.begin(), sorted_bins.end());
+    xmin = sorted_bins.at(0).xmin;
+    xmax = sorted_bins.at(nbins-1).xmax;
+  }
+};
+
 template <size_t D>
 struct event_t {
   std::array<double, D> x;
@@ -22,6 +59,7 @@ struct event_t {
   constexpr size_t dim() { return D; }
 };
 
+// constructing a decision tree for binning
 template <size_t D>
 struct node_t {
   // range of events that the node is looking at for splitting
@@ -58,16 +96,6 @@ struct node_info_t {
   }
 };
 
-// this will read nicer
-template<size_t D>
-using dim_t = std::integral_constant<size_t, D>;
-
-template<size_t D>
-struct bin_t {
-  std::array<double, D> xmin, xmax;
-  double content;
-};
-
 // Greedy, priority-queue‐driven KD‐tree binning
 // the nice priority-queue and partition idea was suggested by chatgpt
 template <size_t D, typename... Args>
@@ -91,8 +119,9 @@ public:
   TreeBinning(dim_t<D> /* dim */, int max_leaves, F&& func):
     f_maxleaves(max_leaves), funcFOM(std::forward<F>(func)) {}
 
-  const std::vector<bin_t<D>>& signal_leaves() const { return f_signal_bins; }
-  const std::vector<bin_t<D>>& bkg_leaves() const { return f_bkg_bins; }
+  // these are already sorted
+  histogram_t<D> signal_hist() const { return histogram_t(f_signal_bins, true); }
+  histogram_t<D> bkg_hist() const { return histogram_t(f_bkg_bins, true); }
 
   // Inputs: lists of D-vectors for signal & background,
   // optional same-length weight arrays.
