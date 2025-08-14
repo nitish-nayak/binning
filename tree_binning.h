@@ -63,7 +63,7 @@ template<size_t D>
 using dim_t = std::integral_constant<size_t, D>;
 
 template<size_t D>
-struct histogram_t {
+struct bin_t {
   std::array<double, D> xmin, xmax;
   double content;
 };
@@ -91,8 +91,8 @@ public:
   TreeBinning(dim_t<D> /* dim */, int max_leaves, F&& func):
     f_maxleaves(max_leaves), funcFOM(std::forward<F>(func)) {}
 
-  const std::vector<histogram_t<D>>& signal_leaves() const { return f_signal_bins; }
-  const std::vector<histogram_t<D>>& bkg_leaves() const { return f_bkg_bins; }
+  const std::vector<bin_t<D>>& signal_leaves() const { return f_signal_bins; }
+  const std::vector<bin_t<D>>& bkg_leaves() const { return f_bkg_bins; }
 
   // Inputs: lists of D-vectors for signal & background,
   // optional same-length weight arrays.
@@ -134,8 +134,8 @@ public:
 private:
   std::unique_ptr<node_t<D>> root;
   std::vector<event_t<D>> f_events;
-  std::vector<histogram_t<D>> f_signal_bins;
-  std::vector<histogram_t<D>> f_bkg_bins;
+  std::vector<bin_t<D>> f_signal_bins;
+  std::vector<bin_t<D>> f_bkg_bins;
   // methods to grow the tree
   void grow_tree() {
     std::priority_queue<node_info_t<D>> pq;
@@ -235,7 +235,7 @@ private:
   }
 
   // Recursively collect leaf hyperrectangles
-  void collect_leaves(node_t<D>* n, std::vector<histogram_t<D>>& out_s, std::vector<histogram_t<D>>& out_b) const {
+  void collect_leaves(node_t<D>* n, std::vector<bin_t<D>>& out_s, std::vector<bin_t<D>>& out_b) const {
     if (!n->left) {
       out_s.push_back({n->xmin, n->xmax, n->S});
       out_b.push_back({n->xmin, n->xmax, n->B});
