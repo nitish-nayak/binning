@@ -1,2 +1,1 @@
-playing around with some binning optimization algorithms
-requires : c++17
+playing around with some binning optimization algorithms (requires c++17)
