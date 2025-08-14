@@ -10,8 +10,9 @@ int main(){
     };
 
     // a 2d binning with a simple FOM for splitting signal and background that maximizes statistical power
-    TreeBinning b(dim_t<2>{}, 4, [](double s, double b){ return s*s/(s+b); });
-    b.fit(sig, bkg);
+    const std::function<double(double, double, double)> func = [](double s, double b, double offset){ return s*s/(s+b) + offset; };
+    TreeBinning b(dim_t<2>{}, 4, func);
+    b.fit(10, sig, bkg);
 
     auto& signal_h = b.signal_leaves();
     auto& bkg_h = b.bkg_leaves();

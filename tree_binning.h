@@ -68,8 +68,8 @@ struct histogram_t {
   double content;
 };
 
-/// Greedy, priority-queue‐driven KD‐tree binning
-/// the nice priority-queue and partition idea was suggested by chatgpt
+// Greedy, priority-queue‐driven KD‐tree binning
+// the nice priority-queue and partition idea was suggested by chatgpt
 template <size_t D, typename... Args>
 class TreeBinning {
 private:
@@ -84,6 +84,9 @@ public:
   // otherwise I have to do weird metaprogramming things like pass in a C-array of size D like (&)[D] and guide the deduction like we do after this
   // ofcourse I also want to enforce funcFOM to take in the first two arguments as double (for signal and bkg counts)
   // and keep Args for the rest
+  TreeBinning(dim_t<D> /* dim */, int max_leaves, const std::function<double(double, double, Args...)> &func):
+    f_maxleaves(max_leaves), funcFOM(func) {}
+  // overload ctor for lambda input as long as it has two arguments
   template<typename F>
   TreeBinning(dim_t<D> /* dim */, int max_leaves, F&& func):
     f_maxleaves(max_leaves), funcFOM(std::forward<F>(func)) {}
@@ -91,8 +94,8 @@ public:
   const std::vector<histogram_t<D>>& signal_leaves() const { return f_signal_bins; }
   const std::vector<histogram_t<D>>& bkg_leaves() const { return f_bkg_bins; }
 
-  /// Inputs: lists of D-vectors for signal & background,
-  /// optional same-length weight arrays.
+  // Inputs: lists of D-vectors for signal & background,
+  // optional same-length weight arrays.
   void fit(Args&& ... args,
            const std::vector<std::array<double,D>>& sig_x,
            const std::vector<std::array<double,D>>& bkg_x,
@@ -244,7 +247,14 @@ private:
 };
 
 // write out the deduction guide here
+// I expect a std::function wrapped input as argument here
 template<size_t D, typename R, typename... Args>
-TreeBinning(dim_t<D>, int, std::function<R(double, double, Args...)>) -> TreeBinning<D, double, double, Args...>;
+TreeBinning(dim_t<D>, int, std::function<R(double, double, Args...)>) -> TreeBinning<D, Args...>;
+
+// allow a lambda input if it has only two arguments
+// I can potentailly do this for lambdas with more arguments as well but then the deduction gets way too complicated
+// because I have to parse out the last but two arguments
+template<size_t D, typename F>
+TreeBinning(dim_t<D>, int, F&&) -> TreeBinning<D>;
 
 #endif
