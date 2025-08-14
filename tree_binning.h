@@ -62,6 +62,12 @@ struct node_info_t {
 template<size_t D>
 using dim_t = std::integral_constant<size_t, D>;
 
+template<size_t D>
+struct histogram_t {
+  std::array<double, D> xmin, xmax;
+  double content;
+};
+
 /// Greedy, priority-queue‐driven KD‐tree binning
 /// the nice priority-queue and partition idea was suggested by chatgpt
 template <size_t D, typename... Args>
@@ -82,13 +88,8 @@ public:
   TreeBinning(dim_t<D> /* dim */, int max_leaves, F&& func):
     f_maxleaves(max_leaves), funcFOM(std::forward<F>(func)) {}
 
-
-  struct histogram_t {
-    std::array<double, D> xmin, xmax;
-    double S, B;
-  };
-
-  const std::vector<histogram_t>& leaves() const { return f_bins; }
+  const std::vector<histogram_t<D>>& signal_leaves() const { return f_signal_bins; }
+  const std::vector<histogram_t<D>>& bkg_leaves() const { return f_bkg_bins; }
 
   /// Inputs: lists of D-vectors for signal & background,
   /// optional same-length weight arrays.
@@ -123,15 +124,15 @@ public:
 
     // greedy splitting
     grow_tree();
-
     // collect leaves
-    collect_leaves(root.get(), f_bins);
+    collect_leaves(root.get(), f_signal_bins, f_bkg_bins);
   }
 
 private:
   std::unique_ptr<node_t<D>> root;
   std::vector<event_t<D>> f_events;
-  std::vector<histogram_t> f_bins;
+  std::vector<histogram_t<D>> f_signal_bins;
+  std::vector<histogram_t<D>> f_bkg_bins;
   // methods to grow the tree
   void grow_tree() {
     std::priority_queue<node_info_t<D>> pq;
@@ -231,12 +232,13 @@ private:
   }
 
   // Recursively collect leaf hyperrectangles
-  void collect_leaves(node_t<D>* n, std::vector<histogram_t>& out) const {
+  void collect_leaves(node_t<D>* n, std::vector<histogram_t<D>>& out_s, std::vector<histogram_t<D>>& out_b) const {
     if (!n->left) {
-      out.push_back({n->xmin, n->xmax, n->S, n->B});
+      out_s.push_back({n->xmin, n->xmax, n->S});
+      out_b.push_back({n->xmin, n->xmax, n->B});
     } else {
-      collect_leaves(n->left.get(),  out);
-      collect_leaves(n->right.get(), out);
+      collect_leaves(n->left.get(),  out_s, out_b);
+      collect_leaves(n->right.get(), out_s, out_b);
     }
   }
 };

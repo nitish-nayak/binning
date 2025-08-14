@@ -13,9 +13,15 @@ int main(){
     TreeBinning b(dim_t<2>{}, 4, [](double s, double b){ return s*s/(s+b); });
     b.fit(sig, bkg);
 
-    for (auto& leaf : b.leaves()) {
-        std::cout << "x in [" << leaf.xmin[0] << ","<<leaf.xmax[0]<<") "
-                  << "y in [" << leaf.xmin[1] << ","<<leaf.xmax[1]<<") "
-                  << "(S="<<leaf.S<<", B="<<leaf.B<<")\n";
+    auto& signal_h = b.signal_leaves();
+    auto& bkg_h = b.bkg_leaves();
+    for (auto it = signal_h.begin(); it != signal_h.end(); ++it) {
+        auto& s_leaf = *it;
+        auto& b_leaf = bkg_h.at(std::distance(signal_h.begin(), it));
+        std::cout << "x in [" << s_leaf.xmin[0] << "," <<s_leaf.xmax[0] << "), "
+                  << "y in [" << s_leaf.xmin[1] << "," <<s_leaf.xmax[1] << ") "
+                  << "(S = "  << s_leaf.content <<", B = " <<b_leaf.content << ")" << std::endl;
     }
+
+    return 0;
 }
