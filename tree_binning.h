@@ -120,8 +120,8 @@ public:
     f_maxleaves(max_leaves), funcFOM(std::forward<F>(func)) {}
 
   // these are already sorted
-  histogram_t<D> signal_hist() const { return histogram_t(f_signal_bins, true); }
-  histogram_t<D> bkg_hist() const { return histogram_t(f_bkg_bins, true); }
+  histogram_t<D> signal_hist() const { return histogram_t(std::move(f_signal_bins), true); }
+  histogram_t<D> bkg_hist() const { return histogram_t(std::move(f_bkg_bins), true); }
 
   // Inputs: lists of D-vectors for signal & background,
   // optional same-length weight arrays.
