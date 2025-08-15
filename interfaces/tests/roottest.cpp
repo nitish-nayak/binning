@@ -1,5 +1,5 @@
-#include "../tree_binning.h"
-#include "root.h"
+#include "../../tree_binning.h"
+#include "../root.h"
 #include "TCanvas.h"
 
 #include <iostream>

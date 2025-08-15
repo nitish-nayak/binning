@@ -1,4 +1,4 @@
-#include "tree_binning.h"
+#include "../tree_binning.h"
 #include <iostream>
 
 int main(){

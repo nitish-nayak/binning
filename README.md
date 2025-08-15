@@ -9,7 +9,7 @@ docker pull rootproject/root
 docker run --rm -it -v $(pwd):/binning rootproject/root bash
 
 # then inside container
-cd binning/interfaces
+cd binning/interfaces/tests
 make roottest
 ./roottest
 ```
