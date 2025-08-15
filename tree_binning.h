@@ -158,7 +158,6 @@ public:
       f_events.push_back({bkg_x[i], bkg_wgt, false});
     }
 
-    // root covers [0,f_events.size()), infinite bounds
     root = std::make_unique<node_t<D>>(0, f_events.size(), lo, hi);
     root->S = totalS;
     root->B = totalB;
