@@ -134,22 +134,31 @@ public:
     f_extraArgs = std::make_tuple(std::forward<Args>(args)...);
     // build events
     double totalS = 0, totalB = 0;
+    // filling low and high edges
+    std::array<double,D> lo, hi;
+    lo.fill(std::numeric_limits<double>::infinity());
+    hi.fill(-std::numeric_limits<double>::infinity());
     f_events.clear();
     for(size_t i = 0; i < sig_x.size(); ++i) {
       double sig_wgt = sig_w.empty() ? 1.0 : sig_w[i];
       totalS += sig_wgt;
+      for(size_t j = 0; j < D; j++){
+        if(lo[j] > sig_x[i][j]) lo[j] = sig_x[i][j];
+        if(hi[j] < sig_x[i][j]) hi[j] = sig_x[i][j];
+      }
       f_events.push_back({sig_x[i], sig_wgt, true});
     }
     for(size_t i = 0; i < bkg_x.size(); ++i) {
       double bkg_wgt = bkg_w.empty() ? 1.0 : bkg_w[i];
       totalB += bkg_wgt;
+      for(size_t j = 0; j < D; j++){
+        if(lo[j] > bkg_x[i][j]) lo[j] = bkg_x[i][j];
+        if(hi[j] < bkg_x[i][j]) hi[j] = bkg_x[i][j];
+      }
       f_events.push_back({bkg_x[i], bkg_wgt, false});
     }
 
     // root covers [0,f_events.size()), infinite bounds
-    std::array<double,D> lo, hi;
-    lo.fill(-std::numeric_limits<double>::infinity());
-    hi.fill( std::numeric_limits<double>::infinity());
     root = std::make_unique<node_t<D>>(0, f_events.size(), lo, hi);
     root->S = totalS;
     root->B = totalB;
