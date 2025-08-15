@@ -19,21 +19,24 @@ template<size_t D>
 using dim_t = std::integral_constant<size_t, D>;
 
 template<size_t D>
-struct bin_t {
+struct bin_t
+{
   std::array<double, D> xmin, xmax;
   double content;
   // operator for sorting vector of bins according to their edges
   // sort them according to their left edges first
   // for multidimensional axes, it uses the relational operator for std::array
   // which is the comparison between the first different element (lexicographically)
-  bool operator<(bin_t const& o_bin) const {
+  bool operator<(bin_t const& o_bin) const
+  {
     if (xmin == o_bin.xmin) return (xmax < o_bin.xmax);
     return (xmin < o_bin.xmin);
   }
 };
 
 template<size_t D>
-struct histogram_t {
+struct histogram_t
+{
   std::array<double, D> xmin, xmax;
   int nbins;
   std::vector<bin_t<D>> sorted_bins;
@@ -52,7 +55,8 @@ struct histogram_t {
 };
 
 template <size_t D>
-struct event_t {
+struct event_t
+{
   std::array<double, D> x;
   double weight;
   bool is_signal;
@@ -61,7 +65,8 @@ struct event_t {
 
 // constructing a decision tree for binning
 template <size_t D>
-struct node_t {
+struct node_t
+{
   // range of events that the node is looking at for splitting
   size_t idx0, idx1;
   std::array<double, D> xmin, xmax;
@@ -75,7 +80,8 @@ struct node_t {
   std::unique_ptr<node_t<D>> left, right;
 
   // scan across events based on given range
-  void extract_counts(const std::vector<event_t<D>>& events){
+  void extract_counts(const std::vector<event_t<D>>& events)
+  {
     S = 0, B = 0;
     for (size_t k = idx0; k < idx1; ++k) {
       auto& e = events[k];
@@ -87,11 +93,13 @@ struct node_t {
 };
 
 template <size_t D>
-struct node_info_t {
+struct node_info_t
+{
   node_t<D>* node;
   double gain;
   // order splits based on their gain
-  bool operator<(node_info_t const& o) const {
+  bool operator<(node_info_t const& o) const
+  {
     return gain < o.gain;
   }
 };
@@ -99,7 +107,8 @@ struct node_info_t {
 // Greedy, priority-queue‐driven KD‐tree binning
 // the nice priority-queue and partition idea was suggested by chatgpt
 template <size_t D, typename... Args>
-class TreeBinning {
+class TreeBinning
+{
 private:
   int f_maxleaves;
   std::function<double(double, double, Args...)> funcFOM;
@@ -176,7 +185,8 @@ private:
   std::vector<bin_t<D>> f_signal_bins;
   std::vector<bin_t<D>> f_bkg_bins;
   // methods to grow the tree
-  void grow_tree() {
+  void grow_tree()
+  {
     std::priority_queue<node_info_t<D>> pq;
     split_node(root.get(), pq);
 
@@ -274,7 +284,8 @@ private:
   }
 
   // Recursively collect leaf hyperrectangles
-  void collect_leaves(node_t<D>* n, std::vector<bin_t<D>>& out_s, std::vector<bin_t<D>>& out_b) const {
+  void collect_leaves(node_t<D>* n, std::vector<bin_t<D>>& out_s, std::vector<bin_t<D>>& out_b) const
+  {
     if (!n->left) {
       out_s.push_back({n->xmin, n->xmax, n->S});
       out_b.push_back({n->xmin, n->xmax, n->B});
