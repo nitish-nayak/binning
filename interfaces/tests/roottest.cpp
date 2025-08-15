@@ -16,12 +16,19 @@ int main(){
     TreeBinning b(dim_t<2>{}, 4, [](double s, double b){ return s*s/(s+b); });
     b.fit(sig, bkg);
 
+    // these histograms are moved from TreeBinning into their own object
+    // and are no longer accessible from TreeBinning once called
+    // of course, TreeBinning still holds the decision tree, each node of which still holds the bin contents
+    // so in principle one can walk it once again and build the histogram like in collect_leaves
+    // but I can tolerate the duplication here since its a more convenient data structure
     histogram_t<2> signal_h = b.signal_hist();
     histogram_t<2> bkg_h = b.bkg_hist();
 
+    // this simply creates a shared pointer to this histogram_t
     root_histogram_t<2> signal_root_h(signal_h);
     root_histogram_t<2> bkg_root_h(bkg_h);
 
+    // of course, now we have to create another copy to put the contents into the ROOT histogram types
     TH2Poly* hsignal = signal_root_h.ToTH2Poly("signal2d");
     TH1D* hbkg = bkg_root_h.ToTH1DCollapsed("bkg1d");
 

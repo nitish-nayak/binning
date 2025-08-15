@@ -211,6 +211,8 @@ private:
       split_node(n->left.get(),  pq);
       split_node(n->right.get(), pq);
     }
+    // clear the queue as well
+    pq = std::priority_queue<node_info_t<D>>();
   }
 
   // Find the best split for node n and push to pq

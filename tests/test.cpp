@@ -13,6 +13,11 @@ int main(){
     TreeBinning b(dim_t<2>{}, 4, [](double s, double b){ return s*s/(s+b); });
     b.fit(sig, bkg);
 
+    // these histograms are moved from TreeBinning into their own object
+    // and are no longer accessible from TreeBinning once called
+    // of course, TreeBinning still holds the decision tree, each node of which still holds the bin contents
+    // so in principle one can walk it once again and build the histogram like in collect_leaves
+    // but I can tolerate the duplication here since its a more convenient data structure
     histogram_t<2> signal_h = b.signal_hist();
     histogram_t<2> bkg_h = b.bkg_hist();
     std::cout << "Bounds (x) : " << signal_h.xmin[0] << ", " << signal_h.xmax[0] << std::endl;
