@@ -164,6 +164,8 @@ public:
 
     // greedy splitting
     grow_tree();
+    // clear up our memory
+    f_events.clear();
     // collect leaves
     collect_leaves(root.get(), f_signal_bins, f_bkg_bins);
   }
