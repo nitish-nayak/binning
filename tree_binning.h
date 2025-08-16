@@ -13,6 +13,7 @@
 #include <numeric>
 #include <functional>
 #include <type_traits>
+#include <cassert>
 
 // this will read nicer
 template<size_t D>
@@ -71,6 +72,7 @@ struct node_t
   size_t idx0, idx1;
   std::array<double, D> xmin, xmax;
   double S = 0, B = 0;
+  int id = -1;
 
   node_t(size_t i0, size_t i1,
        const std::array<double, D>& lo,
@@ -113,6 +115,8 @@ private:
   int f_maxleaves;
   std::function<double(double, double, Args...)> funcFOM;
   std::tuple<Args...> f_extraArgs;
+  bool is_grown = false;
+  int nleaves = 0;
 
 public:
   // if I want to deduce Args from the arguments defined for func, I have to deduce everything else including the dimension which is of non-type here
@@ -131,7 +135,6 @@ public:
   // these are already sorted
   histogram_t<D> signal_hist() const { return histogram_t(std::move(f_signal_bins), true); }
   histogram_t<D> bkg_hist() const { return histogram_t(std::move(f_bkg_bins), true); }
-
   // Inputs: lists of D-vectors for signal & background,
   // optional same-length weight arrays.
   void fit(Args&& ... args,
@@ -177,6 +180,48 @@ public:
     f_events.clear();
     // collect leaves
     collect_leaves(root.get(), f_signal_bins, f_bkg_bins);
+    // clean up
+    is_grown = true;
+  }
+  // fill a histogram_t for our own set of inputs and weights
+  histogram_t<D> apply(const std::vector<std::array<double, D>>& obs,
+                       const std::vector<double>& w = {})
+  {
+    assert(is_grown && "apply() can only be called after fit() and tree is grown");
+    std::vector<bin_t<D>> bins;
+    bins.resize(nleaves);
+    for(size_t i = 0; i < obs.size(); i++){
+      double wgt = w.empty() ? 1.0 : w[i];
+      auto& val = obs[i];
+      node_t<D>* n = get_node_containing(val);
+      if(n) {
+        auto& bin = bins.at(n->id);
+        bin.xmin = n->xmin;
+        bin.xmax = n->xmax;
+        bin.content += wgt;
+      }
+    }
+    // already sorted
+    return histogram_t<D>(std::move(bins), true);
+  }
+  // check which node contains our array of values
+  // returns null if it couldn't find any
+  node_t<D>* get_node_containing(std::array<double, D> val) const
+  {
+    assert(is_grown && "get_node_containing() can only be called after fit() and tree is grown");
+    node_t<D>* curr_node = root.get();
+    while(curr_node->left){
+      if(val[curr_node->dim_split] < curr_node->x_split)
+        curr_node = curr_node->left.get();
+      else
+        curr_node = curr_node->right.get();
+    }
+    // check if its actually within our bin edges
+    for(size_t d = 0; d < D; d++) {
+        if(!(val[d] >= curr_node->xmin[d] && val[d] <= curr_node->xmax[d]))
+          return nullptr;
+    }
+    return curr_node;
   }
 
 private:
@@ -222,7 +267,6 @@ private:
       split_node(n->right.get(), pq);
     }
   }
-
   // Find the best split for node n and push to pq
   void split_node(node_t<D>* n, std::priority_queue<node_info_t<D>>& pq)
   {
@@ -282,18 +326,20 @@ private:
       pq.push({n, split_gain});
     }
   }
-
   // Recursively collect leaf hyperrectangles
-  void collect_leaves(node_t<D>* n, std::vector<bin_t<D>>& out_s, std::vector<bin_t<D>>& out_b) const
+  void collect_leaves(node_t<D>* n, std::vector<bin_t<D>>& out_s, std::vector<bin_t<D>>& out_b)
   {
     if (!n->left) {
       out_s.push_back({n->xmin, n->xmax, n->S});
       out_b.push_back({n->xmin, n->xmax, n->B});
+      n->id = nleaves;
+      nleaves++;
     } else {
       collect_leaves(n->left.get(),  out_s, out_b);
       collect_leaves(n->right.get(), out_s, out_b);
     }
   }
+
 };
 
 // write out the deduction guide here

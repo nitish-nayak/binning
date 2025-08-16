@@ -19,7 +19,7 @@ int main(){
     // so in principle one can walk it once again and build the histogram like in collect_leaves
     // but I can tolerate the duplication here since its a more convenient data structure
     histogram_t<2> signal_h = b.signal_hist();
-    histogram_t<2> bkg_h = b.bkg_hist();
+    histogram_t<2> bkg_h = b.apply(bkg);
     std::cout << "Bounds (x) : " << signal_h.xmin[0] << ", " << signal_h.xmax[0] << std::endl;
     std::cout << "Bounds (y) : " << signal_h.xmin[1] << ", " << signal_h.xmax[1] << std::endl;
     for (auto it = signal_h.sorted_bins.begin(); it != signal_h.sorted_bins.end(); ++it) {
