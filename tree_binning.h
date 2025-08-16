@@ -19,6 +19,7 @@
 template<size_t D>
 using dim_t = std::integral_constant<size_t, D>;
 
+// our bin type
 template<size_t D>
 struct bin_t
 {
@@ -35,6 +36,7 @@ struct bin_t
   }
 };
 
+// our histogram type
 template<size_t D>
 struct histogram_t
 {
@@ -55,6 +57,7 @@ struct histogram_t
   }
 };
 
+// bare-bones event type
 template <size_t D>
 struct event_t
 {
@@ -65,6 +68,7 @@ struct event_t
 };
 
 // constructing a decision tree for binning
+// this represents a node of the tree
 template <size_t D>
 struct node_t
 {
@@ -94,6 +98,7 @@ struct node_t
   size_t dim_split;
 };
 
+// define a struct with a pointer to a node that is used for setting up a priority queue
 template <size_t D>
 struct node_info_t
 {
